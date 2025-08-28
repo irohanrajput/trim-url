@@ -1,17 +1,21 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from contextlib import asynccontextmanager
 from . import models, database, crud, schemas
 import json
 
-app = FastAPI()
 
-
-@app.on_event("startup")
-async def startup():
-    # create tables
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
     async with database.engine.begin() as conn:
         await conn.run_sync(models.Base.metadata.create_all)
+    yield
+    # Code to run on shutdown (if needed)
+
+
+app = FastAPI(lifespan=lifespan)
 
 @app.get("/")
 def health():
